@@ -1,0 +1,136 @@
+{
+  "project_name": "Esfiharia Digital KDS",
+  "design_philosophy": {
+    "identity": "Nocturnal Cravings",
+    "description": "A dark, immersive, appetite-inducing interface that balances the warmth of a stone oven with the precision of a digital system.",
+    "core_principles": [
+      "Appetite First: Colors and imagery must trigger hunger (warm oranges, deep browns, golden yellows).",
+      "Clarity in Chaos: Kitchen and Cashier views must be high-contrast and instantly readable from a distance.",
+      "Tactile Dark Mode: Avoid flat #000. Use layered shades of warm charcoal and stone to create depth.",
+      "Motion for Feedback: Every interaction (add to cart, complete order) has immediate visual response."
+    ]
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Bebas Neue, sans-serif",
+      "weight": "400",
+      "usage": "Page titles, Category headers, Product names, Ticket numbers",
+      "install_url": "https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
+    },
+    "body": {
+      "font_family": "Manrope, sans-serif",
+      "weight": "400, 500, 700",
+      "usage": "Descriptions, Prices, Kitchen instructions, Interface labels",
+      "install_url": "https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap"
+    },
+    "scale": {
+      "h1": "text-5xl md:text-6xl tracking-tight",
+      "h2": "text-3xl md:text-4xl tracking-wide",
+      "h3": "text-2xl tracking-normal",
+      "body_lg": "text-lg leading-relaxed",
+      "body_base": "text-base leading-normal",
+      "caption": "text-sm text-stone-400 uppercase tracking-widest"
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": "#0c0a09",
+      "surface_card": "#1c1917",
+      "surface_hover": "#292524",
+      "primary": "#ea580c",
+      "primary_hover": "#c2410c",
+      "secondary": "#fbbf24",
+      "text_main": "#fafaf9",
+      "text_muted": "#a8a29e",
+      "success": "#22c55e",
+      "warning": "#eab308",
+      "danger": "#ef4444"
+    },
+    "usage_rules": [
+      "NEVER use pure black (#000000). Use Stone-950 (#0c0a09) for backgrounds.",
+      "Primary Orange is for 'Add to Cart' and 'Call to Action' only.",
+      "Kitchen tickets: New = Yellow border/glow, Late = Red border/glow, Ready = Green border/glow.",
+      "Price tags should be prominent, using the Secondary Yellow or bright White."
+    ]
+  },
+  "layout_grid": {
+    "customer_menu": {
+      "type": "Bento Grid",
+      "classes": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 md:p-8"
+    },
+    "kitchen_board": {
+      "type": "Masonry/High-Density",
+      "classes": "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-4"
+    },
+    "checkout": {
+      "type": "Split View",
+      "classes": "flex flex-col md:flex-row gap-8 max-w-6xl mx-auto p-6"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-xl shadow-[0_4px_14px_0_rgba(234,88,12,0.39)] transition-all hover:scale-[1.02] active:scale-95",
+      "secondary": "bg-stone-800 hover:bg-stone-700 text-stone-200 font-medium py-3 px-6 rounded-xl border border-stone-700 transition-colors",
+      "icon": "p-2 rounded-full bg-stone-800 hover:bg-stone-700 text-white transition-colors"
+    },
+    "cards": {
+      "menu_item": "bg-stone-900 border border-stone-800 rounded-2xl overflow-hidden hover:border-orange-500/50 transition-colors duration-300 group relative",
+      "kitchen_ticket": "bg-stone-900 border-l-4 rounded-r-lg shadow-md p-4 flex flex-col gap-3 relative overflow-hidden"
+    },
+    "inputs": {
+      "default": "bg-stone-950 border border-stone-800 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all placeholder:text-stone-600"
+    }
+  },
+  "visual_enhancers": {
+    "shadows": {
+      "glow_primary": "shadow-[0_0_20px_rgba(234,88,12,0.15)]",
+      "glow_success": "shadow-[0_0_20px_rgba(34,197,94,0.15)]"
+    },
+    "textures": "Use a subtle noise texture overlay on the main background with opacity 0.03 to reduce digital flatness.",
+    "glassmorphism": "backdrop-blur-md bg-stone-950/80 border-b border-white/5"
+  },
+  "image_urls": {
+    "hero_background": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80",
+    "categories": {
+      "esfihas_meat": "https://images.unsplash.com/photo-1588798571170-5e9df66a6c1d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHwyfHxsZWJhbmVzZSUyMG1hbmFraXNoJTIwemFhdGFyJTIwY2hlZXNlJTIwZm9vZCUyMHBob3RvZ3JhcGh5fGVufDB8fHx8MTc3MzI1OTk1NHww&ixlib=rb-4.1.0&q=85",
+      "esfihas_cheese": "https://images.unsplash.com/photo-1669908978664-485e69bc26cd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHwzfHxsZWJhbmVzZSUyMG1hbmFraXNoJTIwemFhdGFyJTIwY2hlZXNlJTIwZm9vZCUyMHBob3RvZ3JhcGh5fGVufDB8fHx8MTc3MzI1OTk1NHww&ixlib=rb-4.1.0&q=85",
+      "drinks": "https://images.unsplash.com/photo-1595898186839-ce52e86ee6ec?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNDR8MHwxfHNlYXJjaHwyfHxzb2Z0JTIwZHJpbmtzJTIwc29kYSUyMGdsYXNzJTIwaWNlJTIwZGFyayUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzczMjU5OTQzfDA&ixlib=rb-4.1.0&q=85",
+      "desserts": "https://images.unsplash.com/photo-1770748556866-cc14c8d31490?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzF8MHwxfHNlYXJjaHwyfHxjaG9jb2xhdGUlMjBkZXNzZXJ0JTIwY2FrZSUyMHN3ZWV0JTIwZGFyayUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzczMjU5OTQ0fDA&ixlib=rb-4.1.0&q=85"
+    },
+    "placeholders": {
+      "product": "https://images.unsplash.com/photo-1498654364264-5e856b6bb047?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHwxfHxsZWJhbmVzZSUyMG1hbmFraXNoJTIwemFhdGFyJTIwY2hlZXNlJTIwZm9vZCUyMHBob3RvZ3JhcGh5fGVufDB8fHx8MTc3MzI1OTk1NHww&ixlib=rb-4.1.0&q=85",
+      "kitchen_chef": "https://images.unsplash.com/photo-1731156679850-e73fbc21564c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwzfHxyZXN0YXVyYW50JTIwa2l0Y2hlbiUyMGJ1c3klMjBjaGVmJTIwY29va2luZ3xlbnwwfHx8fDE3NzMyNTk5NDN8MA&ixlib=rb-4.1.0&q=85"
+    }
+  },
+  "icons": {
+    "library": "lucide-react",
+    "mapping": {
+      "cart": "ShoppingBag",
+      "kitchen": "ChefHat",
+      "cashier": "CreditCard",
+      "menu": "UtensilsCrossed",
+      "add": "Plus",
+      "remove": "Minus",
+      "trash": "Trash2",
+      "clock": "Clock",
+      "check": "CheckCircle2",
+      "alert": "AlertCircle"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Install 'lucide-react' if not present.",
+    "Update 'tailwind.config.js' with the custom Stone and Orange palette.",
+    "Create a 'Layout' component that handles the responsive navigation (Bottom bar for mobile, Sidebar for desktop).",
+    "Use 'Bebas Neue' for all headings to give that 'Menu Board' feel.",
+    "Ensure the 'Kitchen View' auto-refreshes or uses websockets (if available) - UI must show status changes clearly.",
+    "Implement the 'Cart' as a sliding drawer on mobile and a sticky column on desktop.",
+    "For the 'Cashier' view, prioritize data density over big images - use a table layout.",
+    "ADD data-testid to all interactive elements (buttons, inputs, cards) for testing."
+  ],
+  "UNIVERSAL_GUIDELINES": {
+    "layout": "Do not center everything. Use asymmetry to create interest. Use negative space (padding) generously.",
+    "interaction": "Buttons must have hover and active states. No dead clicks.",
+    "accessibility": "Ensure text contrast ratios (Stone-400 on Stone-950 is borderline, use Stone-300 for important text).",
+    "code_structure": "Use Shadcn UI components for complex interactions (Dialogs, Sheets) but style them with the custom palette."
+  }
+}

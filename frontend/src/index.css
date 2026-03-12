@@ -1,0 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --background: 20 14% 4%;
+    --foreground: 60 9% 98%;
+    --card: 24 10% 10%;
+    --card-foreground: 60 9% 98%;
+    --popover: 24 10% 10%;
+    --popover-foreground: 60 9% 98%;
+    --primary: 21 90% 48%;
+    --primary-foreground: 60 9% 98%;
+    --secondary: 43 96% 56%;
+    --secondary-foreground: 20 14% 4%;
+    --muted: 24 6% 15%;
+    --muted-foreground: 25 5% 65%;
+    --accent: 24 10% 15%;
+    --accent-foreground: 60 9% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 60 9% 98%;
+    --success: 142 71% 45%;
+    --success-foreground: 60 9% 98%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 20 14% 4%;
+    --border: 24 6% 15%;
+    --input: 24 6% 15%;
+    --ring: 21 90% 48%;
+    --radius: 0.75rem;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Manrope', sans-serif;
+    background-color: #0c0a09;
+    color: #fafaf9;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.02em;
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1c1917;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #44403c;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #57534e;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 15px rgba(234, 88, 12, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(234, 88, 12, 0.5); }
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slideIn {
+    animation: slideIn 0.3s ease-out forwards;
+}
+
+/* Staggered animations */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
