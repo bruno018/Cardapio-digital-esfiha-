@@ -25,7 +25,6 @@ export default function KitchenPage() {
 
   useEffect(() => {
     fetchOrders();
-    // Auto-refresh every 10 seconds
     const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
   }, [fetchOrders]);
@@ -35,12 +34,10 @@ export default function KitchenPage() {
       await axios.patch(`${API}/orders/${orderId}/status`, {
         status: newStatus
       });
-      
       const statusMessages = {
         preparing: 'Pedido em preparação!',
         ready: 'Pedido pronto para entrega!'
       };
-      
       toast.success(statusMessages[newStatus] || 'Status atualizado!');
       fetchOrders();
     } catch (error) {
@@ -102,17 +99,18 @@ export default function KitchenPage() {
                 <span className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
                 NOVOS PEDIDOS ({pendingOrders.length})
               </h2>
-              <div 
+              <div
                 className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4"
                 data-testid="pending-orders"
               >
                 {pendingOrders.map(order => (
                   <OrderTicket
-                    key={order.id}
+                    key={`${order.id}-${JSON.stringify(order.items)}`}
                     order={order}
                     onStatusChange={handleStatusChange}
                     nextStatus="preparing"
                     actionLabel="Iniciar"
+                    onOrderUpdate={fetchOrders}
                   />
                 ))}
               </div>
@@ -126,17 +124,18 @@ export default function KitchenPage() {
                 <span className="w-3 h-3 bg-orange-500 rounded-full animate-pulse" />
                 EM PREPARAÇÃO ({preparingOrders.length})
               </h2>
-              <div 
+              <div
                 className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4"
                 data-testid="preparing-orders"
               >
                 {preparingOrders.map(order => (
                   <OrderTicket
-                    key={order.id}
+                    key={`${order.id}-${JSON.stringify(order.items)}`}
                     order={order}
                     onStatusChange={handleStatusChange}
                     nextStatus="ready"
                     actionLabel="Pronto!"
+                    onOrderUpdate={fetchOrders}
                   />
                 ))}
               </div>

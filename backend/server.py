@@ -71,6 +71,8 @@ class Order(BaseModel):
 
 class OrderStatusUpdate(BaseModel):
     status: OrderStatus
+    items: Optional[List[CartItem]] = None
+    total: Optional[float] = None
 
 # Products endpoints
 @api_router.get("/products", response_model=List[Product])
@@ -165,9 +167,15 @@ async def get_cashier_orders():
 
 @api_router.patch("/orders/{order_id}/status", response_model=Order)
 async def update_order_status(order_id: str, status_update: OrderStatusUpdate):
+    update_data = {"status": status_update.status.value}
+    if status_update.items is not None:
+        update_data["items"] = [item.model_dump() for item in status_update.items]
+    if status_update.total is not None:
+        update_data["total"] = status_update.total
+    
     result = await db.orders.find_one_and_update(
         {"id": order_id},
-        {"$set": {"status": status_update.status.value}},
+        {"$set": update_data},
         return_document=True,
         projection={"_id": 0}
     )
