@@ -73,8 +73,15 @@ class OrderStatusUpdate(BaseModel):
     status: OrderStatus
     items: Optional[List[CartItem]] = None
     total: Optional[float] = None
+    
+    # Products endpoints
+    @api_router.delete("/orders/{order_id}")
+async def delete_order(order_id: str):
+    result = await db.orders.delete_one({"id": order_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"message": "Order deleted successfully"}
 
-# Products endpoints
 @api_router.get("/products", response_model=List[Product])
 async def get_products():
     products = await db.products.find({}, {"_id": 0}).to_list(100)

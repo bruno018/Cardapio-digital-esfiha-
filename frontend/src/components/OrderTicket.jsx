@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, CheckCircle2, AlertCircle, Pencil, X, Check } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, Pencil, X, Check, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -109,6 +109,17 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
     setEditedItems(editedItems.filter((_, i) => i !== index));
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Tem certeza que deseja excluir este pedido?')) return;
+    try {
+      await axios.delete(`${API}/orders/${order.id}`);
+      toast.success('Pedido excluído com sucesso!');
+      if (onOrderUpdate) onOrderUpdate();
+    } catch(err) {
+      toast.error('Erro ao excluir pedido');
+    }
+  };
+
   const handleSave = async () => {
     try {
       const newTotal = calcTotal(editedItems);
@@ -203,6 +214,9 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
             <>
               <Button onClick={() => setEditing(false)} className="bg-stone-700 hover:bg-stone-600 text-white py-2 px-3 text-sm">
                 <X className="w-4 h-4" />
+              </Button>
+              <Button onClick={handleDelete} className="bg-red-700 hover:bg-red-600 text-white py-2 px-3 text-sm">
+                <Trash2 className="w-4 h-4" />
               </Button>
               <Button onClick={handleSave} className="bg-green-600 hover:bg-green-500 text-white py-2 px-3 text-sm">
                 <Check className="w-4 h-4" />
