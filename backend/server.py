@@ -75,7 +75,7 @@ class OrderStatusUpdate(BaseModel):
     total: Optional[float] = None
     
     # Products endpoints
-    @api_router.delete("/orders/{order_id}")
+@api_router.delete("/orders/{order_id}")
 async def delete_order(order_id: str):
     result = await db.orders.delete_one({"id": order_id})
     if result.deleted_count == 0:
