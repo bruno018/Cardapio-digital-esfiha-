@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { CreditCard, RefreshCw, CheckCircle2, Clock, TrendingUp, ShoppingBag, DollarSign, FileText } from 'lucide-react';
+import { CreditCard, RefreshCw, CheckCircle2, Clock, TrendingUp, ShoppingBag, DollarSign, FileText, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -8,6 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
+import { printCashierOrder } from '@/lib/printorder';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -52,11 +53,9 @@ export default function CashierPage() {
 
   const generatePDF = () => {
     if (!monthlyReport) return;
-
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Header
     doc.setFillColor(30, 30, 30);
     doc.rect(0, 0, pageWidth, 40, 'F');
     doc.setTextColor(255, 255, 255);
@@ -67,16 +66,13 @@ export default function CashierPage() {
     doc.setFont('helvetica', 'normal');
     doc.text(`Relatório Mensal — ${monthlyReport.month}`, pageWidth / 2, 30, { align: 'center' });
 
-    // Date generated
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(9);
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, 48, { align: 'center' });
 
-    // Stats boxes
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
 
-    // Box 1 - Faturamento
     doc.setFillColor(245, 158, 11, 0.1);
     doc.setDrawColor(245, 158, 11);
     doc.roundedRect(14, 55, 55, 28, 3, 3, 'FD');
@@ -85,7 +81,6 @@ export default function CashierPage() {
     doc.setFontSize(13);
     doc.text(formatPrice(monthlyReport.total_revenue), 41, 76, { align: 'center' });
 
-    // Box 2 - Pedidos
     doc.setFillColor(34, 197, 94, 0.1);
     doc.setDrawColor(34, 197, 94);
     doc.roundedRect(77, 55, 55, 28, 3, 3, 'FD');
@@ -95,7 +90,6 @@ export default function CashierPage() {
     doc.setFontSize(13);
     doc.text(`${monthlyReport.total_orders}`, 104, 76, { align: 'center' });
 
-    // Box 3 - Ticket Médio
     doc.setFillColor(59, 130, 246, 0.1);
     doc.setDrawColor(59, 130, 246);
     doc.roundedRect(140, 55, 55, 28, 3, 3, 'FD');
@@ -104,17 +98,14 @@ export default function CashierPage() {
     doc.text('TICKET MÉDIO', 167, 65, { align: 'center' });
     doc.setFontSize(13);
     const ticketMedio = monthlyReport.total_orders > 0
-      ? monthlyReport.total_revenue / monthlyReport.total_orders
-      : 0;
+      ? monthlyReport.total_revenue / monthlyReport.total_orders : 0;
     doc.text(formatPrice(ticketMedio), 167, 76, { align: 'center' });
 
-    // Table title
     doc.setTextColor(50, 50, 50);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('DETALHAMENTO DOS PEDIDOS', 14, 96);
 
-    // Table
     autoTable(doc, {
       startY: 100,
       head: [['Data', 'Mesa', 'Cliente', 'Itens', 'Total']],
@@ -125,36 +116,15 @@ export default function CashierPage() {
         order.items.map(i => `${i.quantity}x ${i.name}`).join(', '),
         formatPrice(order.total)
       ]),
-      headStyles: {
-        fillColor: [30, 30, 30],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        fontSize: 10
-      },
-      bodyStyles: {
-        fontSize: 9,
-        textColor: [50, 50, 50]
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      },
+      headStyles: { fillColor: [30, 30, 30], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 10 },
+      bodyStyles: { fontSize: 9, textColor: [50, 50, 50] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
       columnStyles: {
-        0: { cellWidth: 22 },
-        1: { cellWidth: 15 },
-        2: { cellWidth: 35 },
-        3: { cellWidth: 80 },
-        4: { cellWidth: 25, halign: 'right' }
+        0: { cellWidth: 22 }, 1: { cellWidth: 15 }, 2: { cellWidth: 35 },
+        3: { cellWidth: 80 }, 4: { cellWidth: 25, halign: 'right' }
       },
-      foot: [[
-        '', '', '', 'TOTAL DO MÊS',
-        formatPrice(monthlyReport.total_revenue)
-      ]],
-      footStyles: {
-        fillColor: [30, 30, 30],
-        textColor: [245, 158, 11],
-        fontStyle: 'bold',
-        fontSize: 10
-      }
+      foot: [['', '', '', 'TOTAL DO MÊS', formatPrice(monthlyReport.total_revenue)]],
+      footStyles: { fillColor: [30, 30, 30], textColor: [245, 158, 11], fontStyle: 'bold', fontSize: 10 }
     });
 
     doc.save(`relatorio-${monthlyReport.month.replace('/', '-')}.pdf`);
@@ -198,7 +168,6 @@ export default function CashierPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-green-600/20 rounded-full flex items-center justify-center">
@@ -212,28 +181,17 @@ export default function CashierPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={fetchMonthlyReport}
-            variant="outline"
-            className="btn-secondary flex items-center gap-2 text-amber-400"
-            disabled={loadingReport}
-          >
+          <Button onClick={fetchMonthlyReport} variant="outline" className="btn-secondary flex items-center gap-2 text-amber-400" disabled={loadingReport}>
             <TrendingUp className="w-4 h-4" />
             {loadingReport ? 'Carregando...' : 'Relatório do Mês'}
           </Button>
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            className="btn-secondary flex items-center gap-2"
-            disabled={refreshing}
-          >
+          <Button onClick={handleRefresh} variant="outline" className="btn-secondary flex items-center gap-2" disabled={refreshing}>
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Atualizando...' : 'Atualizar'}
           </Button>
         </div>
       </div>
 
-      {/* Stats Card */}
       <div className="bg-stone-900 border border-stone-800 rounded-xl p-6 mb-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div>
@@ -251,7 +209,6 @@ export default function CashierPage() {
         </div>
       </div>
 
-      {/* Monthly Report */}
       {showReport && monthlyReport && (
         <div className="bg-stone-900 border border-amber-500/30 rounded-xl p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -260,23 +217,14 @@ export default function CashierPage() {
               RELATÓRIO — {monthlyReport.month.toUpperCase()}
             </h2>
             <div className="flex gap-2">
-              <Button
-                onClick={generatePDF}
-                className="bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-2 py-2 px-4"
-              >
+              <Button onClick={generatePDF} className="bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-2 py-2 px-4">
                 <FileText className="w-4 h-4" />
                 Gerar PDF
               </Button>
-              <button
-                onClick={() => setShowReport(false)}
-                className="text-stone-500 hover:text-white text-xl px-2"
-              >
-                ✕
-              </button>
+              <button onClick={() => setShowReport(false)} className="text-stone-500 hover:text-white text-xl px-2">✕</button>
             </div>
           </div>
 
-          {/* Report Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-stone-800 rounded-xl p-4 flex items-center gap-4">
               <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center">
@@ -303,15 +251,12 @@ export default function CashierPage() {
               <div>
                 <p className="text-stone-400 text-sm">Ticket Médio</p>
                 <p className="text-2xl text-blue-400 font-bold">
-                  {monthlyReport.total_orders > 0
-                    ? formatPrice(monthlyReport.total_revenue / monthlyReport.total_orders)
-                    : formatPrice(0)}
+                  {monthlyReport.total_orders > 0 ? formatPrice(monthlyReport.total_revenue / monthlyReport.total_orders) : formatPrice(0)}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Report Orders Table */}
           {monthlyReport.orders.length > 0 ? (
             <div className="bg-stone-950/50 rounded-xl overflow-hidden">
               <Table>
@@ -379,9 +324,18 @@ export default function CashierPage() {
                         </TableCell>
                         <TableCell className="text-amber-400 font-bold text-right">{formatPrice(order.total)}</TableCell>
                         <TableCell className="text-right">
-                          <Button onClick={() => handleMarkDelivered(order.id)} className="btn-primary py-2 px-4">
-                            Entregar
-                          </Button>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              onClick={() => printCashierOrder(order)}
+                              className="bg-stone-700 hover:bg-stone-600 text-white py-2 px-3"
+                              title="Imprimir comprovante"
+                            >
+                              <Printer className="w-4 h-4" />
+                            </Button>
+                            <Button onClick={() => handleMarkDelivered(order.id)} className="btn-primary py-2 px-4">
+                              Entregar
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

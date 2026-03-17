@@ -4,6 +4,7 @@ import OrderTicket from '@/components/OrderTicket';
 import { ChefHat, RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { printKitchenOrder } from '@/lib/printorder';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -13,7 +14,7 @@ export default function KitchenPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const prevPendingCount = useRef(null);
+  const prevOrderIds = useRef(null);
 
   const playNotification = useCallback(() => {
     try {
@@ -42,12 +43,21 @@ export default function KitchenPage() {
     try {
       const response = await axios.get(`${API}/orders/kitchen`);
       const newOrders = response.data;
-      const newPendingCount = newOrders.filter(o => o.status === 'pending').length;
-      if (prevPendingCount.current !== null && newPendingCount > prevPendingCount.current) {
-        if (soundEnabled) playNotification();
-        toast.info(`🛎️ Novo pedido chegou!`, { duration: 4000 });
+      const newPendingOrders = newOrders.filter(o => o.status === 'pending');
+
+      if (prevOrderIds.current !== null) {
+        const newlyAdded = newPendingOrders.filter(
+          o => !prevOrderIds.current.includes(o.id)
+        );
+
+        if (newlyAdded.length > 0) {
+          if (soundEnabled) playNotification();
+          toast.info(`🛎️ ${newlyAdded.length} novo(s) pedido(s) chegou!`, { duration: 4000 });
+          newlyAdded.forEach(o => printKitchenOrder(o));
+        }
       }
-      prevPendingCount.current = newPendingCount;
+
+      prevOrderIds.current = newPendingOrders.map(o => o.id);
       setOrders(newOrders);
     } catch (error) {
       console.error('Error fetching kitchen orders:', error);
@@ -113,7 +123,6 @@ export default function KitchenPage() {
             onClick={handleRefresh}
             variant="outline"
             className="btn-secondary flex items-center gap-2"
-            data-testid="refresh-kitchen-btn"
             disabled={refreshing}
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
