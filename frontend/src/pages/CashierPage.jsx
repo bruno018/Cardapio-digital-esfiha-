@@ -20,6 +20,9 @@ export default function CashierPage() {
   const [monthlyReport, setMonthlyReport] = useState(null);
   const [showReport, setShowReport] = useState(false);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [showCloseDay, setShowCloseDay] = useState(false);
+  const [closeDayPassword, setCloseDayPassword] = useState('');
+  const [closingDay, setClosingDay] = useState(false);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -49,6 +52,26 @@ export default function CashierPage() {
     setRefreshing(true);
     await fetchOrders();
     setTimeout(() => setRefreshing(false), 500);
+  };
+
+  const handleCloseDay = async () => {
+    if (closeDayPassword !== process.env.REACT_APP_STAFF_PASSWORD) {
+      toast.error('Senha incorreta!');
+      setCloseDayPassword('');
+      return;
+    }
+    setClosingDay(true);
+    try {
+      const response = await axios.post(`${API}/orders/close-day`);
+      toast.success(`Caixa fechado! ${response.data.archived} pedidos arquivados.`);
+      setShowCloseDay(false);
+      setCloseDayPassword('');
+      fetchOrders();
+    } catch (error) {
+      toast.error('Erro ao fechar caixa');
+    } finally {
+      setClosingDay(false);
+    }
   };
 
   const generatePDF = () => {
@@ -168,6 +191,56 @@ export default function CashierPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+
+      {/* Modal Fechar Caixa */}
+      {showCloseDay && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-stone-900 border border-red-500/30 rounded-2xl p-8 w-full max-w-sm shadow-2xl">
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-red-500" />
+              </div>
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-white">Fechar Caixa</h2>
+                <p className="text-stone-400 mt-1">
+                  Todos os pedidos entregues serão arquivados e o faturamento do dia será zerado.
+                </p>
+                <p className="text-amber-400 text-sm mt-2">
+                  ⚠️ O relatório mensal não será afetado!
+                </p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <input
+                type="password"
+                placeholder="Digite a senha para confirmar"
+                value={closeDayPassword}
+                onChange={e => setCloseDayPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleCloseDay()}
+                className="w-full bg-stone-800 text-white placeholder-stone-500 border border-stone-700 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500"
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => { setShowCloseDay(false); setCloseDayPassword(''); }}
+                  className="flex-1 bg-stone-700 hover:bg-stone-600 text-white py-3"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleCloseDay}
+                  className="flex-1 bg-red-700 hover:bg-red-600 text-white py-3"
+                  disabled={closingDay}
+                >
+                  {closingDay ? 'Fechando...' : 'Confirmar'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-green-600/20 rounded-full flex items-center justify-center">
@@ -181,17 +254,36 @@ export default function CashierPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={fetchMonthlyReport} variant="outline" className="btn-secondary flex items-center gap-2 text-amber-400" disabled={loadingReport}>
+          <Button
+            onClick={() => setShowCloseDay(true)}
+            variant="outline"
+            className="btn-secondary flex items-center gap-2 text-red-400"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Fechar Caixa
+          </Button>
+          <Button
+            onClick={fetchMonthlyReport}
+            variant="outline"
+            className="btn-secondary flex items-center gap-2 text-amber-400"
+            disabled={loadingReport}
+          >
             <TrendingUp className="w-4 h-4" />
             {loadingReport ? 'Carregando...' : 'Relatório do Mês'}
           </Button>
-          <Button onClick={handleRefresh} variant="outline" className="btn-secondary flex items-center gap-2" disabled={refreshing}>
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            className="btn-secondary flex items-center gap-2"
+            disabled={refreshing}
+          >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Atualizando...' : 'Atualizar'}
           </Button>
         </div>
       </div>
 
+      {/* Stats Card */}
       <div className="bg-stone-900 border border-stone-800 rounded-xl p-6 mb-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div>
@@ -199,16 +291,17 @@ export default function CashierPage() {
             <p className="text-3xl text-green-500 font-bold">{readyOrders.length}</p>
           </div>
           <div>
-            <p className="text-stone-500 text-sm mb-1">Entregues</p>
+            <p className="text-stone-500 text-sm mb-1">Entregues Hoje</p>
             <p className="text-3xl text-stone-400 font-bold">{deliveredOrders.length}</p>
           </div>
           <div className="col-span-2">
-            <p className="text-stone-500 text-sm mb-1">Faturamento Total</p>
+            <p className="text-stone-500 text-sm mb-1">Faturamento do Dia</p>
             <p className="text-3xl text-amber-400 font-bold">{formatPrice(totalRevenue)}</p>
           </div>
         </div>
       </div>
 
+      {/* Monthly Report */}
       {showReport && monthlyReport && (
         <div className="bg-stone-900 border border-amber-500/30 rounded-xl p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -251,7 +344,9 @@ export default function CashierPage() {
               <div>
                 <p className="text-stone-400 text-sm">Ticket Médio</p>
                 <p className="text-2xl text-blue-400 font-bold">
-                  {monthlyReport.total_orders > 0 ? formatPrice(monthlyReport.total_revenue / monthlyReport.total_orders) : formatPrice(0)}
+                  {monthlyReport.total_orders > 0
+                    ? formatPrice(monthlyReport.total_revenue / monthlyReport.total_orders)
+                    : formatPrice(0)}
                 </p>
               </div>
             </div>
@@ -349,7 +444,7 @@ export default function CashierPage() {
             <div>
               <h2 className="text-2xl text-stone-500 mb-4 flex items-center gap-2">
                 <CheckCircle2 className="w-6 h-6" />
-                PEDIDOS ENTREGUES
+                PEDIDOS ENTREGUES HOJE
               </h2>
               <div className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden opacity-75">
                 <Table>

@@ -112,6 +112,20 @@ async def get_monthly_report():
         "orders": orders
     }
 
+@api_router.post("/orders/close-day")
+async def close_day():
+    from datetime import datetime, timezone
+    
+    result = await db.orders.update_many(
+        {"status": "delivered"},
+        {"$set": {"archived": True}}
+    )
+    
+    return {
+        "message": "Caixa fechado com sucesso!",
+        "archived": result.modified_count
+    }
+    
 @api_router.get("/products", response_model=List[Product])
 async def get_products():
     products = await db.products.find({}, {"_id": 0}).to_list(100)
@@ -192,9 +206,11 @@ async def get_kitchen_orders():
 
 @api_router.get("/orders/cashier", response_model=List[Order])
 async def get_cashier_orders():
-    """Get orders for cashier (ready and delivered)"""
     orders = await db.orders.find(
-        {"status": {"$in": ["ready", "delivered"]}},
+        {
+            "status": {"$in": ["ready", "delivered"]},
+            "archived": {"$ne": True}
+        },
         {"_id": 0}
     ).sort("created_at", -1).to_list(100)
     for order in orders:
