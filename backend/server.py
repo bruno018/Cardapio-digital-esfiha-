@@ -82,6 +82,36 @@ async def delete_order(order_id: str):
         raise HTTPException(status_code=404, detail="Order not found")
     return {"message": "Order deleted successfully"}
 
+@api_router.get("/orders/reports/monthly")
+async def get_monthly_report():
+    from datetime import datetime, timezone
+    import calendar
+    
+    now = datetime.now(timezone.utc)
+    first_day = datetime(now.year, now.month, 1, tzinfo=timezone.utc).isoformat()
+    last_day = datetime(now.year, now.month, calendar.monthrange(now.year, now.month)[1], 23, 59, 59, tzinfo=timezone.utc).isoformat()
+    
+    orders = await db.orders.find(
+        {
+            "status": "delivered",
+            "created_at": {"$gte": first_day, "$lte": last_day}
+        },
+        {"_id": 0}
+    ).to_list(1000)
+    
+    for order in orders:
+        if isinstance(order['created_at'], str):
+            order['created_at'] = datetime.fromisoformat(order['created_at'])
+    
+    total = sum(o['total'] for o in orders)
+    
+    return {
+        "month": now.strftime("%B/%Y"),
+        "total_orders": len(orders),
+        "total_revenue": total,
+        "orders": orders
+    }
+
 @api_router.get("/products", response_model=List[Product])
 async def get_products():
     products = await db.products.find({}, {"_id": 0}).to_list(100)
