@@ -76,6 +76,15 @@ h1, h2, h3, h4, h5, h6 {
     background: #57534e;
 }
 
+/* Hide scrollbar but keep scroll funcionando */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
