@@ -400,10 +400,10 @@ export default function MenuPage() {
                         <span className="price-tag">{formatPrice(product.price)}</span>
                         <button
                           onClick={() => handleAddToCart(product)}
-                          className="btn-primary flex items-center gap-2 py-2 px-4"
+                          className="btn-primary flex items-center gap-1.5 py-1.5 px-3 md:py-2 md:px-4"
                         >
-                          <Plus className="w-4 h-4" />
-                          <span>Adicionar</span>
+                          <Plus className="w-4 h-4 shrink-0" />
+                          <span className="hidden sm:inline text-sm">Adicionar</span>
                         </button>
                       </div>
                     </div>
@@ -690,11 +690,11 @@ export default function MenuPage() {
                         <span className="price-tag">{formatPrice(product.price)}</span>
                         <button
                           onClick={() => handleAddToCart(product)}
-                          className="btn-primary flex items-center gap-2 py-2 px-4"
+                          className="btn-primary flex items-center gap-1.5 py-1.5 px-3 md:py-2 md:px-4"
                           data-testid={`add-to-cart-${product.id}`}
                         >
-                          <Plus className="w-4 h-4" />
-                          <span>Adicionar</span>
+                          <Plus className="w-4 h-4 shrink-0" />
+                          <span className="hidden sm:inline text-sm">Adicionar</span>
                         </button>
                       </div>
                     </div>
