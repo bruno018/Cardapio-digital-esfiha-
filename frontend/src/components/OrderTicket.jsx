@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Clock, CheckCircle2, AlertCircle, Pencil, X, Check, Trash2, Bike, ShoppingBag, Phone, MapPin } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, Pencil, X, Check, Trash2, Bike, ShoppingBag, Phone, MapPin, Printer } from 'lucide-react';
+import { printCashierOrder } from '@/lib/printorder';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -294,6 +295,9 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
             </>
           ) : (
             <>
+              <Button onClick={() => printCashierOrder(order)} className="bg-stone-700 hover:bg-stone-600 text-white py-2 px-3 text-sm" title="Imprimir comprovante">
+                <Printer className="w-4 h-4" />
+              </Button>
               <Button onClick={handleEditClick} className="bg-stone-700 hover:bg-stone-600 text-white py-2 px-3 text-sm">
                 <Pencil className="w-4 h-4" />
               </Button>
