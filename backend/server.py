@@ -194,15 +194,23 @@ async def get_all_orders():
 
 @api_router.get("/orders/kitchen", response_model=List[Order])
 async def get_kitchen_orders():
-    """Get orders for kitchen (pending and preparing)"""
+    """
+    Retorna pedidos pending/preparing da cozinha.
+    Inclui pedidos do app de mesa (source=None) e do delivery (source='delivery').
+    O campo table_number dos pedidos de delivery vem como 'DELIVERY - XXXXXX',
+    então a KitchenPage exibe automaticamente a origem sem nenhuma mudança no frontend.
+    """
     orders = await db.orders.find(
         {"status": {"$in": ["pending", "preparing"]}},
         {"_id": 0}
     ).sort("created_at", 1).to_list(100)
+ 
     for order in orders:
-        if isinstance(order['created_at'], str):
+        if isinstance(order.get('created_at'), str):
             order['created_at'] = datetime.fromisoformat(order['created_at'])
+ 
     return orders
+ 
 
 @api_router.get("/orders/cashier", response_model=List[Order])
 async def get_cashier_orders():
