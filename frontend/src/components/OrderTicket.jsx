@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, CheckCircle2, AlertCircle, Pencil, X, Check, Trash2 } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, Pencil, X, Check, Trash2, Bike, ShoppingBag, Phone, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -48,6 +48,10 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
   const [hasLocalUpdate, setHasLocalUpdate] = useState(false);
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+
+  // Detecta se é pedido de delivery
+  const isDelivery = order.source === 'delivery';
+  const isDeliveryType = order.delivery_type === 'delivery';
 
   useEffect(() => {
     if (!hasLocalUpdate) {
@@ -142,14 +146,28 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
 
   return (
     <div className={`kitchen-ticket ${order.status} animate-fadeIn`} data-testid={`order-ticket-${order.id}`}>
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-2xl text-white font-bold">#{order.table_number}</span>
           <span className={`status-badge ${order.status}`}>
             <StatusIcon className="w-3 h-3 inline mr-1" />
             {config.label}
           </span>
+          {/* Badge delivery ou retirada */}
+          {isDelivery && (
+            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+              isDeliveryType
+                ? 'bg-blue-500/20 text-blue-400'
+                : 'bg-purple-500/20 text-purple-400'
+            }`}>
+              {isDeliveryType
+                ? <><Bike className="w-3 h-3" /> Entrega</>
+                : <><ShoppingBag className="w-3 h-3" /> Retirada</>
+              }
+            </span>
+          )}
         </div>
         <span className="text-stone-500 text-sm flex items-center gap-1">
           <Clock className="w-4 h-4" />
@@ -159,6 +177,47 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
 
       {/* Customer Name */}
       <div className="text-stone-300 font-medium">{order.customer_name}</div>
+
+      {/* Informações de entrega (só para pedidos delivery) */}
+      {isDelivery && (
+        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 space-y-1.5">
+          {/* Telefone */}
+          {order.customer_phone && (
+            <div className="flex items-center gap-2 text-sm">
+              <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+              <span className="text-stone-300">{order.customer_phone}</span>
+            </div>
+          )}
+
+          {/* Endereço (só se for entrega) */}
+          {isDeliveryType && order.address && (
+            <div className="flex items-start gap-2 text-sm">
+              <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+              <span className="text-stone-300">{order.address}</span>
+            </div>
+          )}
+
+          {/* Pagamento */}
+          {order.payment_method && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-blue-400 font-medium text-xs uppercase tracking-wide">Pagamento:</span>
+              <span className="text-stone-300 capitalize">
+                {order.payment_method === 'pix' ? 'PIX' : 
+                 order.payment_method === 'card' ? 'Cartão' : 
+                 order.payment_method}
+              </span>
+            </div>
+          )}
+
+          {/* Observação geral do pedido */}
+          {order.notes && (
+            <div className="flex items-start gap-2 text-sm pt-1 border-t border-blue-500/20">
+              <span className="text-blue-400 font-medium text-xs uppercase tracking-wide shrink-0">Obs:</span>
+              <span className="text-stone-300">{order.notes}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Items */}
       <div className="bg-stone-950/50 rounded-lg p-3 space-y-2">
@@ -193,12 +252,20 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
           )
         ) : (
           displayItems.map((item, index) => (
-            <div key={index} className="flex justify-between text-sm" data-testid={`order-item-${order.id}-${index}`}>
-              <span className="text-stone-300">
-                <span className="text-orange-500 font-bold mr-2">{item.quantity}x</span>
-                {item.name}
-              </span>
-              <span className="text-stone-500">{formatPrice(item.price * item.quantity)}</span>
+            <div key={index} className="flex flex-col text-sm" data-testid={`order-item-${order.id}-${index}`}>
+              <div className="flex justify-between">
+                <span className="text-stone-300">
+                  <span className="text-orange-500 font-bold mr-2">{item.quantity}x</span>
+                  {item.name}
+                </span>
+                <span className="text-stone-500">{formatPrice(item.price * item.quantity)}</span>
+              </div>
+              {/* Observação por item */}
+              {item.notes && (
+                <span className="text-yellow-400/80 text-xs ml-5 mt-0.5">
+                  obs: {item.notes}
+                </span>
+              )}
             </div>
           ))
         )}
