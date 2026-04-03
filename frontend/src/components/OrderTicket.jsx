@@ -148,14 +148,21 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
     <div className={`kitchen-ticket ${order.status} animate-fadeIn`} data-testid={`order-ticket-${order.id}`}>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-2xl text-white font-bold">#{order.table_number}</span>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xl text-white font-bold truncate">
+            #{isDelivery ? `DELIVERY - ${order.short_id || order.table_number.replace('DELIVERY - ', '')}` : order.table_number}
+          </span>
+          <span className="text-stone-500 text-sm flex items-center gap-1 shrink-0">
+            <Clock className="w-4 h-4" />
+            {formatTime(order.created_at)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
           <span className={`status-badge ${order.status}`}>
             <StatusIcon className="w-3 h-3 inline mr-1" />
             {config.label}
           </span>
-          {/* Badge delivery ou retirada */}
           {isDelivery && (
             <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
               isDeliveryType
@@ -169,10 +176,6 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
             </span>
           )}
         </div>
-        <span className="text-stone-500 text-sm flex items-center gap-1">
-          <Clock className="w-4 h-4" />
-          {formatTime(order.created_at)}
-        </span>
       </div>
 
       {/* Customer Name */}
