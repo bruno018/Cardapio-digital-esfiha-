@@ -7,6 +7,19 @@ export function printKitchenOrder(order) {
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const isDelivery = order.source === 'delivery';
+  const isDeliveryType = order.delivery_type === 'delivery';
+
+  const deliverySection = isDelivery ? `
+    <div class="divider"></div>
+    <div class="bold large center">${isDeliveryType ? '** ENTREGA **' : '** RETIRADA **'}</div>
+    <div class="divider"></div>
+    ${order.customer_phone ? `<div><span class="bold">Telefone:</span> ${order.customer_phone}</div>` : ''}
+    ${isDeliveryType && order.address ? `<div><span class="bold">Endereco:</span> ${order.address}</div>` : ''}
+    ${order.payment_method ? `<div><span class="bold">Pagamento:</span> ${order.payment_method === 'pix' ? 'PIX' : order.payment_method === 'card' ? 'Cartao' : order.payment_method}</div>` : ''}
+    ${order.notes ? `<div><span class="bold">Obs geral:</span> ${order.notes}</div>` : ''}
+  ` : '';
+
   const content = `
     <html>
       <head>
@@ -25,6 +38,7 @@ export function printKitchenOrder(order) {
           .divider { border-top: 1px dashed #000; margin: 6px 0; }
           .item-row { display: flex; justify-content: space-between; margin: 3px 0; }
           .qty { font-weight: bold; color: #000; min-width: 25px; }
+          .obs { font-size: 11px; font-style: italic; margin-left: 25px; margin-bottom: 4px; }
           .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
         </style>
       </head>
@@ -37,6 +51,7 @@ export function printKitchenOrder(order) {
         <div class="divider"></div>
         <div><span class="bold">Cliente:</span> ${order.customer_name}</div>
         <div><span class="bold">Hora:</span> ${formatTime(order.created_at)}</div>
+        ${deliverySection}
         <div class="divider"></div>
         <div class="bold">ITENS:</div>
         <br/>
@@ -45,6 +60,7 @@ export function printKitchenOrder(order) {
             <span><span class="qty">${item.quantity}x</span> ${item.name}</span>
             <span>${formatPrice(item.price * item.quantity)}</span>
           </div>
+          ${item.notes ? `<div class="obs">obs: ${item.notes}</div>` : ''}
         `).join('')}
         <div class="divider"></div>
         <div class="total-row">
@@ -59,7 +75,12 @@ export function printKitchenOrder(order) {
     </html>
   `;
 
+  // Protecao contra popup bloqueado
   const win = window.open('', '_blank', 'width=400,height=600');
+  if (!win) {
+    console.warn('Popup bloqueado pelo navegador. Impressao cancelada.');
+    return;
+  }
   win.document.write(content);
   win.document.close();
   win.focus();
@@ -83,6 +104,17 @@ export function printCashierOrder(order) {
     return date.toLocaleDateString('pt-BR');
   };
 
+  const isDelivery = order.source === 'delivery';
+  const isDeliveryType = order.delivery_type === 'delivery';
+
+  const deliverySection = isDelivery ? `
+    <div class="divider"></div>
+    <div class="bold">${isDeliveryType ? 'Entrega' : 'Retirada'}</div>
+    ${order.customer_phone ? `<div><span class="bold">Telefone:</span> ${order.customer_phone}</div>` : ''}
+    ${isDeliveryType && order.address ? `<div><span class="bold">Endereco:</span> ${order.address}</div>` : ''}
+    ${order.payment_method ? `<div><span class="bold">Pagamento:</span> ${order.payment_method === 'pix' ? 'PIX' : order.payment_method === 'card' ? 'Cartao' : order.payment_method}</div>` : ''}
+  ` : '';
+
   const content = `
     <html>
       <head>
@@ -101,6 +133,7 @@ export function printCashierOrder(order) {
           .divider { border-top: 1px dashed #000; margin: 6px 0; }
           .item-row { display: flex; justify-content: space-between; margin: 3px 0; }
           .qty { font-weight: bold; min-width: 25px; }
+          .obs { font-size: 11px; font-style: italic; margin-left: 25px; margin-bottom: 4px; }
           .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
         </style>
       </head>
@@ -114,6 +147,7 @@ export function printCashierOrder(order) {
         <div><span class="bold">Cliente:</span> ${order.customer_name}</div>
         <div><span class="bold">Data:</span> ${formatDate(order.created_at)}</div>
         <div><span class="bold">Hora:</span> ${formatTime(order.created_at)}</div>
+        ${deliverySection}
         <div class="divider"></div>
         <div class="bold">ITENS:</div>
         <br/>
@@ -122,6 +156,7 @@ export function printCashierOrder(order) {
             <span><span class="qty">${item.quantity}x</span> ${item.name}</span>
             <span>${formatPrice(item.price * item.quantity)}</span>
           </div>
+          ${item.notes ? `<div class="obs">obs: ${item.notes}</div>` : ''}
         `).join('')}
         <div class="divider"></div>
         <div class="total-row">
@@ -137,7 +172,12 @@ export function printCashierOrder(order) {
     </html>
   `;
 
+  // Protecao contra popup bloqueado
   const win = window.open('', '_blank', 'width=400,height=600');
+  if (!win) {
+    console.warn('Popup bloqueado pelo navegador. Impressao cancelada.');
+    return;
+  }
   win.document.write(content);
   win.document.close();
   win.focus();
