@@ -52,6 +52,7 @@ class CartItem(BaseModel):
     name: str
     price: float
     quantity: int
+    notes: Optional[str] = None  # observacoes por item
 
 class OrderCreate(BaseModel):
     customer_name: str
@@ -68,13 +69,24 @@ class Order(BaseModel):
     total: float
     status: OrderStatus = OrderStatus.PENDING
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Campos extras para pedidos de delivery
+    source: Optional[str] = None
+    short_id: Optional[str] = None
+    customer_phone: Optional[str] = None
+    delivery_type: Optional[str] = None
+    address: Optional[str] = None
+    payment_method: Optional[str] = None
+    notes: Optional[str] = None
 
 class OrderStatusUpdate(BaseModel):
     status: OrderStatus
     items: Optional[List[CartItem]] = None
     total: Optional[float] = None
-    
-    # Products endpoints
+
+# ─────────────────────────────────────────
+# Orders endpoints
+# ─────────────────────────────────────────
+
 @api_router.delete("/orders/{order_id}")
 async def delete_order(order_id: str):
     result = await db.orders.delete_one({"id": order_id})
@@ -84,27 +96,22 @@ async def delete_order(order_id: str):
 
 @api_router.get("/orders/reports/monthly")
 async def get_monthly_report():
-    from datetime import datetime, timezone
     import calendar
-    
     now = datetime.now(timezone.utc)
     first_day = datetime(now.year, now.month, 1, tzinfo=timezone.utc).isoformat()
     last_day = datetime(now.year, now.month, calendar.monthrange(now.year, now.month)[1], 23, 59, 59, tzinfo=timezone.utc).isoformat()
-    
+
     orders = await db.orders.find(
-        {
-            "status": "delivered",
-            "created_at": {"$gte": first_day, "$lte": last_day}
-        },
+        {"status": "delivered", "created_at": {"$gte": first_day, "$lte": last_day}},
         {"_id": 0}
     ).to_list(1000)
-    
+
     for order in orders:
         if isinstance(order['created_at'], str):
             order['created_at'] = datetime.fromisoformat(order['created_at'])
-    
+
     total = sum(o['total'] for o in orders)
-    
+
     return {
         "month": now.strftime("%B/%Y"),
         "total_orders": len(orders),
@@ -114,61 +121,15 @@ async def get_monthly_report():
 
 @api_router.post("/orders/close-day")
 async def close_day():
-    from datetime import datetime, timezone
-    
     result = await db.orders.update_many(
         {"status": "delivered"},
         {"$set": {"archived": True}}
     )
-    
     return {
         "message": "Caixa fechado com sucesso!",
         "archived": result.modified_count
     }
-    
-@api_router.get("/products", response_model=List[Product])
-async def get_products():
-    products = await db.products.find({}, {"_id": 0}).to_list(100)
-    return products
 
-@api_router.get("/products/seed")
-async def seed_products():
-    """Seed initial products"""
-    existing = await db.products.count_documents({})
-    if existing > 0:
-        return {"message": "Products already seeded", "count": existing}
-    
-    products = [
-        # Esfihas de Carne
-        {"id": str(uuid.uuid4()), "name": "Esfiha de Carne", "description": "Tradicional esfiha de carne moída temperada", "price": 6.50, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1588798571170-5e9df66a6c1d?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Esfiha de Carne com Queijo", "description": "Carne moída com queijo mussarela derretido", "price": 7.50, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1588798571170-5e9df66a6c1d?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Esfiha de Calabresa", "description": "Calabresa fatiada com cebola", "price": 7.00, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1588798571170-5e9df66a6c1d?w=400"},
-        # Esfihas de Frango
-        {"id": str(uuid.uuid4()), "name": "Esfiha de Frango", "description": "Frango desfiado temperado", "price": 6.50, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1669908978664-485e69bc26cd?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Esfiha de Frango com Catupiry", "description": "Frango com catupiry cremoso", "price": 7.50, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1669908978664-485e69bc26cd?w=400"},
-        # Esfihas de Queijo
-        {"id": str(uuid.uuid4()), "name": "Esfiha de Queijo", "description": "Queijo mussarela derretido", "price": 6.00, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1669908978664-485e69bc26cd?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Esfiha 4 Queijos", "description": "Mussarela, provolone, parmesão e catupiry", "price": 8.50, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1669908978664-485e69bc26cd?w=400"},
-        # Esfihas Especiais
-        {"id": str(uuid.uuid4()), "name": "Esfiha Beirute", "description": "Carne, queijo, tomate e orégano", "price": 8.00, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1498654364264-5e856b6bb047?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Esfiha Vegetariana", "description": "Legumes frescos e queijo", "price": 7.00, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1498654364264-5e856b6bb047?w=400"},
-        # Bebidas
-        {"id": str(uuid.uuid4()), "name": "Coca-Cola Lata", "description": "350ml gelada", "price": 6.00, "category": "bebidas", "image_url": "https://images.unsplash.com/photo-1595898186839-ce52e86ee6ec?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Guaraná Antarctica", "description": "350ml gelado", "price": 5.50, "category": "bebidas", "image_url": "https://images.unsplash.com/photo-1595898186839-ce52e86ee6ec?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Suco de Laranja", "description": "Natural 300ml", "price": 8.00, "category": "bebidas", "image_url": "https://images.unsplash.com/photo-1595898186839-ce52e86ee6ec?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Água Mineral", "description": "500ml sem gás", "price": 4.00, "category": "bebidas", "image_url": "https://images.unsplash.com/photo-1595898186839-ce52e86ee6ec?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Água com Gás", "description": "500ml", "price": 4.50, "category": "bebidas", "image_url": "https://images.unsplash.com/photo-1595898186839-ce52e86ee6ec?w=400"},
-        # Sobremesas
-        {"id": str(uuid.uuid4()), "name": "Esfiha de Chocolate", "description": "Recheio cremoso de chocolate", "price": 7.00, "category": "sobremesas", "image_url": "https://images.unsplash.com/photo-1770748556866-cc14c8d31490?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Esfiha de Doce de Leite", "description": "Doce de leite argentino", "price": 7.00, "category": "sobremesas", "image_url": "https://images.unsplash.com/photo-1770748556866-cc14c8d31490?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Esfiha de Banana com Canela", "description": "Banana caramelizada com canela", "price": 7.50, "category": "sobremesas", "image_url": "https://images.unsplash.com/photo-1770748556866-cc14c8d31490?w=400"},
-        {"id": str(uuid.uuid4()), "name": "Pudim", "description": "Pudim de leite condensado", "price": 10.00, "category": "sobremesas", "image_url": "https://images.unsplash.com/photo-1770748556866-cc14c8d31490?w=400"},
-    ]
-    
-    await db.products.insert_many(products)
-    return {"message": "Products seeded successfully", "count": len(products)}
-
-# Orders endpoints
 @api_router.post("/orders", response_model=Order)
 async def create_order(order_data: OrderCreate):
     order = Order(
@@ -177,10 +138,10 @@ async def create_order(order_data: OrderCreate):
         items=[item.model_dump() for item in order_data.items],
         total=order_data.total
     )
-    
+
     doc = order.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
-    
+
     await db.orders.insert_one(doc)
     return order
 
@@ -195,30 +156,24 @@ async def get_all_orders():
 @api_router.get("/orders/kitchen", response_model=List[Order])
 async def get_kitchen_orders():
     """
-    Retorna pedidos pending/preparing da cozinha.
-    Inclui pedidos do app de mesa (source=None) e do delivery (source='delivery').
-    O campo table_number dos pedidos de delivery vem como 'DELIVERY - XXXXXX',
-    então a KitchenPage exibe automaticamente a origem sem nenhuma mudança no frontend.
+    Retorna pedidos pending/preparing.
+    Inclui pedidos do app de mesa e do delivery (source='delivery').
     """
     orders = await db.orders.find(
         {"status": {"$in": ["pending", "preparing"]}},
         {"_id": 0}
     ).sort("created_at", 1).to_list(100)
- 
+
     for order in orders:
         if isinstance(order.get('created_at'), str):
             order['created_at'] = datetime.fromisoformat(order['created_at'])
- 
+
     return orders
- 
 
 @api_router.get("/orders/cashier", response_model=List[Order])
 async def get_cashier_orders():
     orders = await db.orders.find(
-        {
-            "status": {"$in": ["ready", "delivered"]},
-            "archived": {"$ne": True}
-        },
+        {"status": {"$in": ["ready", "delivered"]}, "archived": {"$ne": True}},
         {"_id": 0}
     ).sort("created_at", -1).to_list(100)
     for order in orders:
@@ -233,27 +188,70 @@ async def update_order_status(order_id: str, status_update: OrderStatusUpdate):
         update_data["items"] = [item.model_dump() for item in status_update.items]
     if status_update.total is not None:
         update_data["total"] = status_update.total
-    
+
     result = await db.orders.find_one_and_update(
         {"id": order_id},
         {"$set": update_data},
         return_document=True,
         projection={"_id": 0}
     )
-    
+
     if not result:
         raise HTTPException(status_code=404, detail="Order not found")
-    
+
     if isinstance(result['created_at'], str):
         result['created_at'] = datetime.fromisoformat(result['created_at'])
-    
+
     return result
+
+# ─────────────────────────────────────────
+# Products endpoints
+# ─────────────────────────────────────────
+
+@api_router.get("/products", response_model=List[Product])
+async def get_products():
+    products = await db.products.find({}, {"_id": 0}).to_list(100)
+    return products
+
+@api_router.get("/products/seed")
+async def seed_products():
+    existing = await db.products.count_documents({})
+    if existing > 0:
+        return {"message": "Products already seeded", "count": existing}
+
+    products = [
+        {"id": str(uuid.uuid4()), "name": "Esfiha de Carne", "description": "Tradicional esfiha de carne moída temperada", "price": 6.50, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1588798571170-5e9df66a6c1d?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Esfiha de Carne com Queijo", "description": "Carne moída com queijo mussarela derretido", "price": 7.50, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1588798571170-5e9df66a6c1d?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Esfiha de Calabresa", "description": "Calabresa fatiada com cebola", "price": 7.00, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1588798571170-5e9df66a6c1d?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Esfiha de Frango", "description": "Frango desfiado temperado", "price": 6.50, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1669908978664-485e69bc26cd?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Esfiha de Frango com Catupiry", "description": "Frango com catupiry cremoso", "price": 7.50, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1669908978664-485e69bc26cd?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Esfiha de Queijo", "description": "Queijo mussarela derretido", "price": 6.00, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1669908978664-485e69bc26cd?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Esfiha 4 Queijos", "description": "Mussarela, provolone, parmesão e catupiry", "price": 8.50, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1669908978664-485e69bc26cd?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Esfiha Beirute", "description": "Carne, queijo, tomate e orégano", "price": 8.00, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1498654364264-5e856b6bb047?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Esfiha Vegetariana", "description": "Legumes frescos e queijo", "price": 7.00, "category": "esfihas", "image_url": "https://images.unsplash.com/photo-1498654364264-5e856b6bb047?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Coca-Cola Lata", "description": "350ml gelada", "price": 6.00, "category": "bebidas", "image_url": "https://images.unsplash.com/photo-1595898186839-ce52e86ee6ec?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Guaraná Antarctica", "description": "350ml gelado", "price": 5.50, "category": "bebidas", "image_url": "https://images.unsplash.com/photo-1595898186839-ce52e86ee6ec?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Suco de Laranja", "description": "Natural 300ml", "price": 8.00, "category": "bebidas", "image_url": "https://images.unsplash.com/photo-1595898186839-ce52e86ee6ec?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Água Mineral", "description": "500ml sem gás", "price": 4.00, "category": "bebidas", "image_url": "https://images.unsplash.com/photo-1595898186839-ce52e86ee6ec?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Água com Gás", "description": "500ml", "price": 4.50, "category": "bebidas", "image_url": "https://images.unsplash.com/photo-1595898186839-ce52e86ee6ec?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Esfiha de Chocolate", "description": "Recheio cremoso de chocolate", "price": 7.00, "category": "sobremesas", "image_url": "https://images.unsplash.com/photo-1770748556866-cc14c8d31490?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Esfiha de Doce de Leite", "description": "Doce de leite argentino", "price": 7.00, "category": "sobremesas", "image_url": "https://images.unsplash.com/photo-1770748556866-cc14c8d31490?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Esfiha de Banana com Canela", "description": "Banana caramelizada com canela", "price": 7.50, "category": "sobremesas", "image_url": "https://images.unsplash.com/photo-1770748556866-cc14c8d31490?w=400"},
+        {"id": str(uuid.uuid4()), "name": "Pudim", "description": "Pudim de leite condensado", "price": 10.00, "category": "sobremesas", "image_url": "https://images.unsplash.com/photo-1770748556866-cc14c8d31490?w=400"},
+    ]
+
+    await db.products.insert_many(products)
+    return {"message": "Products seeded successfully", "count": len(products)}
+
+# ─────────────────────────────────────────
+# Root
+# ─────────────────────────────────────────
 
 @api_router.get("/")
 async def root():
     return {"message": "Esfiharia API running"}
 
-# Include the router in the main app
+# Include router
 app.include_router(api_router)
 
 app.add_middleware(
@@ -264,7 +262,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
