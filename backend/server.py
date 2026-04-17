@@ -14,18 +14,13 @@ from enum import Enum
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app
 app = FastAPI()
-
-# Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-# Enums
 class OrderStatus(str, Enum):
     PENDING = "pending"
     PREPARING = "preparing"
@@ -37,7 +32,6 @@ class ProductCategory(str, Enum):
     BEBIDAS = "bebidas"
     SOBREMESAS = "sobremesas"
 
-# Models
 class Product(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -52,7 +46,7 @@ class CartItem(BaseModel):
     name: str
     price: float
     quantity: int
-    notes: Optional[str] = None  # observacoes por item
+    notes: Optional[str] = None
 
 class OrderCreate(BaseModel):
     customer_name: str
@@ -63,13 +57,13 @@ class OrderCreate(BaseModel):
 class Order(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    order_number: Optional[int] = None
     customer_name: str
     table_number: str
     items: List[CartItem]
     total: float
     status: OrderStatus = OrderStatus.PENDING
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    # Campos extras para pedidos de delivery
     source: Optional[str] = None
     short_id: Optional[str] = None
     customer_phone: Optional[str] = None
@@ -83,9 +77,17 @@ class OrderStatusUpdate(BaseModel):
     items: Optional[List[CartItem]] = None
     total: Optional[float] = None
 
-# ─────────────────────────────────────────
-# Orders endpoints
-# ─────────────────────────────────────────
+# ─── Helper: próximo número sequencial ───────────────────────
+async def get_next_order_number() -> int:
+    result = await db.counters.find_one_and_update(
+        {"_id": "order_number"},
+        {"$inc": {"seq": 1}},
+        upsert=True,
+        return_document=True
+    )
+    return result["seq"]
+
+# ─── Orders endpoints ─────────────────────────────────────────
 
 @api_router.delete("/orders/{order_id}")
 async def delete_order(order_id: str):
@@ -111,7 +113,6 @@ async def get_monthly_report():
             order['created_at'] = datetime.fromisoformat(order['created_at'])
 
     total = sum(o['total'] for o in orders)
-
     return {
         "month": now.strftime("%B/%Y"),
         "total_orders": len(orders),
@@ -125,6 +126,12 @@ async def close_day():
         {"status": "delivered"},
         {"$set": {"archived": True}}
     )
+    # Zera o contador de numeração
+    await db.counters.update_one(
+        {"_id": "order_number"},
+        {"$set": {"seq": 0}},
+        upsert=True
+    )
     return {
         "message": "Caixa fechado com sucesso!",
         "archived": result.modified_count
@@ -132,16 +139,16 @@ async def close_day():
 
 @api_router.post("/orders", response_model=Order)
 async def create_order(order_data: OrderCreate):
+    order_number = await get_next_order_number()
     order = Order(
+        order_number=order_number,
         customer_name=order_data.customer_name,
         table_number=order_data.table_number,
         items=[item.model_dump() for item in order_data.items],
         total=order_data.total
     )
-
     doc = order.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
-
     await db.orders.insert_one(doc)
     return order
 
@@ -155,19 +162,13 @@ async def get_all_orders():
 
 @api_router.get("/orders/kitchen", response_model=List[Order])
 async def get_kitchen_orders():
-    """
-    Retorna pedidos pending/preparing.
-    Inclui pedidos do app de mesa e do delivery (source='delivery').
-    """
     orders = await db.orders.find(
         {"status": {"$in": ["pending", "preparing"]}},
         {"_id": 0}
     ).sort("created_at", 1).to_list(100)
-
     for order in orders:
         if isinstance(order.get('created_at'), str):
             order['created_at'] = datetime.fromisoformat(order['created_at'])
-
     return orders
 
 @api_router.get("/orders/cashier", response_model=List[Order])
@@ -195,18 +196,13 @@ async def update_order_status(order_id: str, status_update: OrderStatusUpdate):
         return_document=True,
         projection={"_id": 0}
     )
-
     if not result:
         raise HTTPException(status_code=404, detail="Order not found")
-
     if isinstance(result['created_at'], str):
         result['created_at'] = datetime.fromisoformat(result['created_at'])
-
     return result
 
-# ─────────────────────────────────────────
-# Products endpoints
-# ─────────────────────────────────────────
+# ─── Products endpoints ───────────────────────────────────────
 
 @api_router.get("/products", response_model=List[Product])
 async def get_products():
@@ -239,19 +235,13 @@ async def seed_products():
         {"id": str(uuid.uuid4()), "name": "Esfiha de Banana com Canela", "description": "Banana caramelizada com canela", "price": 7.50, "category": "sobremesas", "image_url": "https://images.unsplash.com/photo-1770748556866-cc14c8d31490?w=400"},
         {"id": str(uuid.uuid4()), "name": "Pudim", "description": "Pudim de leite condensado", "price": 10.00, "category": "sobremesas", "image_url": "https://images.unsplash.com/photo-1770748556866-cc14c8d31490?w=400"},
     ]
-
     await db.products.insert_many(products)
     return {"message": "Products seeded successfully", "count": len(products)}
-
-# ─────────────────────────────────────────
-# Root
-# ─────────────────────────────────────────
 
 @api_router.get("/")
 async def root():
     return {"message": "Esfiharia API running"}
 
-# Include router
 app.include_router(api_router)
 
 app.add_middleware(
@@ -262,10 +252,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")

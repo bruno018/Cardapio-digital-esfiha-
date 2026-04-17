@@ -142,6 +142,7 @@ export function printCashierOrder(order) {
         <div class="center">--------------------------------</div>
         <div class="divider"></div>
         <div class="center bold large">COMPROVANTE</div>
+        ${order.order_number ? `<div class="center bold" style="font-size:32px;letter-spacing:2px;">SENHA #${String(order.order_number).padStart(3,'0')}</div>` : ''}
         <div class="center bold xlarge">#${order.table_number}</div>
         <div class="divider"></div>
         <div><span class="bold">Cliente:</span> ${order.customer_name}</div>

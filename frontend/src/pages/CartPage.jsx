@@ -27,6 +27,7 @@ export default function CartPage() {
   const [tableNumber, setTableNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [orderNumber, setOrderNumber] = useState(null);
   const [notes, setNotes] = useState({});
   const [openNotes, setOpenNotes] = useState({});
 
@@ -68,13 +69,14 @@ export default function CartPage() {
         notes: notes[item.product_id] || '',
       }));
 
-      await axios.post(`${API}/orders`, {
+      const response = await axios.post(`${API}/orders`, {
         customer_name: customerName,
         table_number: tableNumber,
         items: itemsWithNotes,
         total,
       });
 
+      setOrderNumber(response.data.order_number);
       setOrderComplete(true);
       clearCart();
       toast.success('Pedido enviado com sucesso!');
@@ -100,6 +102,15 @@ export default function CartPage() {
           <h2 className="text-4xl text-white mb-4">PEDIDO ENVIADO!</h2>
           <p className="text-stone-400 text-lg mb-2">Obrigado, {customerName}!</p>
           <p className="text-stone-500">Seu pedido foi enviado para a cozinha.</p>
+          {orderNumber && (
+            <div className="mt-6 bg-orange-600/20 border border-orange-500/50 rounded-2xl px-8 py-4 inline-block">
+              <p className="text-stone-400 text-sm mb-1">Sua senha</p>
+              <p className="text-5xl font-bold text-orange-500 tracking-widest">
+                #{String(orderNumber).padStart(3, '0')}
+              </p>
+              <p className="text-stone-500 text-xs mt-1">Aguarde ser chamado</p>
+            </div>
+          )}
           <p className="text-orange-500 mt-4 font-medium">Mesa {tableNumber}</p>
         </div>
       </div>

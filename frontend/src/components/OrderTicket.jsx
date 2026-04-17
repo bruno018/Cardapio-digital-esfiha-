@@ -151,9 +151,16 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
       {/* Header */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xl text-white font-bold truncate">
-            #{isDelivery ? `DELIVERY - ${order.short_id || order.table_number.replace('DELIVERY - ', '')}` : order.table_number}
-          </span>
+          <div className="flex items-center gap-2">
+            {order.order_number && (
+              <span className="bg-orange-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shrink-0">
+                #{String(order.order_number).padStart(3, '0')}
+              </span>
+            )}
+            <span className="text-xl text-white font-bold truncate">
+              {isDelivery ? `DELIVERY - ${order.short_id || order.table_number.replace('DELIVERY - ', '')}` : `Mesa ${order.table_number}`}
+            </span>
+          </div>
           <span className="text-stone-500 text-sm flex items-center gap-1 shrink-0">
             <Clock className="w-4 h-4" />
             {formatTime(order.created_at)}
