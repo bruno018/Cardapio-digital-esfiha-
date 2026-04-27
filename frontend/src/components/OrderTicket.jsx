@@ -13,7 +13,9 @@ const statusConfig = {
     label: 'Pendente',
     icon: Clock,
     color: 'text-yellow-500',
+    colorLight: 'text-orange-600',
     bgColor: 'bg-yellow-500/20',
+    bgColorLight: 'bg-orange-100',
     borderColor: 'border-yellow-500'
   },
   preparing: {
@@ -148,7 +150,7 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
 
   return (
     <div className={`animate-fadeIn rounded-xl p-4 flex flex-col gap-3 relative overflow-hidden border-l-4 ${
-      order.status === "pending" ? "border-yellow-500" :
+      order.status === "pending" ? (d ? "border-yellow-500" : "border-orange-500") :
       order.status === "preparing" ? "border-orange-500" :
       order.status === "ready" ? "border-green-500" : "border-stone-500"
     } ${d ? "bg-stone-900 border-r border-t border-b border-r-stone-800 border-t-stone-800 border-b-stone-800" : "bg-white border-r border-t border-b border-r-gray-200 border-t-gray-200 border-b-gray-200 shadow-sm"}`} data-testid={`order-ticket-${order.id}`}>
@@ -172,7 +174,15 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`status-badge ${order.status}`}>
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${
+            d
+              ? (order.status === 'pending' ? 'bg-yellow-500/20 text-yellow-500' :
+                 order.status === 'preparing' ? 'bg-orange-500/20 text-orange-500' :
+                 order.status === 'ready' ? 'bg-green-500/20 text-green-500' : 'bg-stone-500/20 text-stone-500')
+              : (order.status === 'pending' ? 'bg-orange-100 text-orange-600' :
+                 order.status === 'preparing' ? 'bg-orange-100 text-orange-600' :
+                 order.status === 'ready' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')
+          }`}>
             <StatusIcon className="w-3 h-3 inline mr-1" />
             {config.label}
           </span>
@@ -289,7 +299,7 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
 
       {/* Total and Actions */}
       <div className={`flex items-center justify-between pt-2 border-t ${d ? "border-stone-800" : "border-gray-200"}`}>
-        <span className="text-lg font-bold text-amber-400">
+        <span className={`text-lg font-bold ${d ? "text-amber-400" : "text-orange-600"}`}>
           Total: {formatPrice(editing ? calcTotal(editedItems) : displayTotal)}
         </span>
         <div className="flex gap-2">

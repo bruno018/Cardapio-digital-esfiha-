@@ -191,8 +191,8 @@ export default function KitchenPage() {
           <div className="space-y-8">
             {pendingOrders.length > 0 && (
               <div>
-                <h2 className="text-2xl text-yellow-500 mb-4 flex items-center gap-2">
-                  <span className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
+                <h2 className={`text-2xl mb-4 flex items-center gap-2 ${d ? "text-yellow-500" : "text-orange-600"}`}>
+                  <span className={`w-3 h-3 rounded-full animate-pulse ${d ? "bg-yellow-500" : "bg-orange-600"}`} />
                   NOVOS PEDIDOS ({pendingOrders.length})
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4" data-testid="pending-orders">
