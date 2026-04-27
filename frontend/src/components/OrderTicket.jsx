@@ -39,7 +39,8 @@ const statusConfig = {
   }
 };
 
-export default function OrderTicket({ order, onStatusChange, nextStatus, actionLabel, onOrderUpdate }) {
+export default function OrderTicket({ order, onStatusChange, nextStatus, actionLabel, onOrderUpdate, darkMode = true }) {
+  const d = darkMode;
   const config = statusConfig[order.status] || statusConfig.pending;
   const StatusIcon = config.icon;
   const [editing, setEditing] = useState(false);
@@ -146,7 +147,11 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
   };
 
   return (
-    <div className={`kitchen-ticket ${order.status} animate-fadeIn`} data-testid={`order-ticket-${order.id}`}>
+    <div className={`animate-fadeIn rounded-xl p-4 flex flex-col gap-3 relative overflow-hidden border-l-4 ${
+      order.status === "pending" ? "border-yellow-500" :
+      order.status === "preparing" ? "border-orange-500" :
+      order.status === "ready" ? "border-green-500" : "border-stone-500"
+    } ${d ? "bg-stone-900 border-r border-t border-b border-r-stone-800 border-t-stone-800 border-b-stone-800" : "bg-white border-r border-t border-b border-r-gray-200 border-t-gray-200 border-b-gray-200 shadow-sm"}`} data-testid={`order-ticket-${order.id}`}>
 
       {/* Header */}
       <div className="flex flex-col gap-1">
@@ -161,7 +166,7 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
               {isDelivery ? `DELIVERY - ${order.short_id || order.table_number.replace('DELIVERY - ', '')}` : `Mesa ${order.table_number}`}
             </span>
           </div>
-          <span className="text-stone-500 text-sm flex items-center gap-1 shrink-0">
+          <span className={`text-sm flex items-center gap-1 shrink-0 ${d ? "text-stone-500" : "text-gray-500"}`}>
             <Clock className="w-4 h-4" />
             {formatTime(order.created_at)}
           </span>
@@ -187,7 +192,7 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
       </div>
 
       {/* Customer Name */}
-      <div className="text-stone-300 font-medium">{order.customer_name}</div>
+      <div className={`font-medium ${d ? "text-stone-300" : "text-stone-700"}`}>{order.customer_name}</div>
 
       {/* Informações de entrega (só para pedidos delivery) */}
       {isDelivery && (
@@ -196,7 +201,7 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
           {order.customer_phone && (
             <div className="flex items-center gap-2 text-sm">
               <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-              <span className="text-stone-300">{order.customer_phone}</span>
+              <span className={d ? "text-stone-300" : "text-stone-700"}>{order.customer_phone}</span>
             </div>
           )}
 
@@ -204,7 +209,7 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
           {isDeliveryType && order.address && (
             <div className="flex items-start gap-2 text-sm">
               <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-              <span className="text-stone-300">{order.address}</span>
+              <span className={d ? "text-stone-300" : "text-stone-700"}>{order.address}</span>
             </div>
           )}
 
@@ -224,14 +229,14 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
           {order.notes && (
             <div className="flex items-start gap-2 text-sm pt-1 border-t border-blue-500/20">
               <span className="text-blue-400 font-medium text-xs uppercase tracking-wide shrink-0">Obs:</span>
-              <span className="text-stone-300">{order.notes}</span>
+              <span className={d ? "text-stone-300" : "text-stone-700"}>{order.notes}</span>
             </div>
           )}
         </div>
       )}
 
       {/* Items */}
-      <div className="bg-stone-950/50 rounded-lg p-3 space-y-2">
+      <div className={`rounded-lg p-3 space-y-2 ${d ? "bg-stone-950/50" : "bg-gray-50 border border-gray-200"}`}>
         {editing ? (
           loadingProducts ? (
             <p className="text-stone-400 text-sm">Carregando produtos...</p>
@@ -265,11 +270,11 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
           displayItems.map((item, index) => (
             <div key={index} className="flex flex-col text-sm" data-testid={`order-item-${order.id}-${index}`}>
               <div className="flex justify-between">
-                <span className="text-stone-300">
+                <span className={d ? "text-stone-300" : "text-stone-700"}>
                   <span className="text-orange-500 font-bold mr-2">{item.quantity}x</span>
                   {item.name}
                 </span>
-                <span className="text-stone-500">{formatPrice(item.price * item.quantity)}</span>
+                <span className={d ? "text-stone-500" : "text-gray-500"}>{formatPrice(item.price * item.quantity)}</span>
               </div>
               {/* Observação por item */}
               {item.notes && (
@@ -283,7 +288,7 @@ export default function OrderTicket({ order, onStatusChange, nextStatus, actionL
       </div>
 
       {/* Total and Actions */}
-      <div className="flex items-center justify-between pt-2 border-t border-stone-800">
+      <div className={`flex items-center justify-between pt-2 border-t ${d ? "border-stone-800" : "border-gray-200"}`}>
         <span className="text-lg font-bold text-amber-400">
           Total: {formatPrice(editing ? calcTotal(editedItems) : displayTotal)}
         </span>

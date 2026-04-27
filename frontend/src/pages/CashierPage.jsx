@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { CreditCard, RefreshCw, CheckCircle2, Clock, TrendingUp, ShoppingBag, DollarSign, FileText, Printer } from 'lucide-react';
+import { CreditCard, RefreshCw, CheckCircle2, Clock, TrendingUp, ShoppingBag, DollarSign, FileText, Printer, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -23,6 +23,19 @@ export default function CashierPage() {
   const [showCloseDay, setShowCloseDay] = useState(false);
   const [closeDayPassword, setCloseDayPassword] = useState('');
   const [closingDay, setClosingDay] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('cashier_dark_mode');
+    return saved === null ? true : saved === 'true';
+  });
+
+  const d = darkMode;
+
+  const toggleDarkMode = () => {
+    setDarkMode(prev => {
+      localStorage.setItem('cashier_dark_mode', String(!prev));
+      return !prev;
+    });
+  };
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -171,9 +184,8 @@ export default function CashierPage() {
     }
   };
 
-  const formatPrice = (price) => {
-    return price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
+  const formatPrice = (price) =>
+    price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
@@ -189,20 +201,32 @@ export default function CashierPage() {
   const deliveredOrders = orders.filter(o => o.status === 'delivered');
   const totalRevenue = deliveredOrders.reduce((sum, order) => sum + order.total, 0);
 
+  // Estilos reutilizáveis baseados no modo
+  const bg       = d ? 'bg-stone-950'              : 'bg-gray-100';
+  const cardBg   = d ? 'bg-stone-900 border-stone-800' : 'bg-white border-gray-200 shadow-sm';
+  const textMain = d ? 'text-white'                : 'text-stone-800';
+  const textSub  = d ? 'text-stone-500'            : 'text-gray-500';
+  const textMid  = d ? 'text-stone-300'            : 'text-stone-700';
+  const textFade = d ? 'text-stone-400'            : 'text-gray-500';
+  const rowHover = d ? 'border-stone-800 hover:bg-stone-800/50' : 'border-gray-100 hover:bg-gray-50';
+  const headTxt  = d ? 'text-stone-400'            : 'text-gray-500';
+  const inputBg  = d ? 'bg-stone-800 text-white placeholder-stone-500 border-stone-700 focus:border-red-500'
+                     : 'bg-gray-100 text-stone-800 placeholder-gray-400 border-gray-300 focus:border-red-400';
+
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+    <div className={`min-h-screen transition-colors duration-300 ${bg}`}>
 
       {/* Modal Fechar Caixa */}
       {showCloseDay && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-stone-900 border border-red-500/30 rounded-2xl p-8 w-full max-w-sm shadow-2xl">
+          <div className={`border rounded-2xl p-8 w-full max-w-sm shadow-2xl ${d ? 'bg-stone-900 border-red-500/30' : 'bg-white border-red-300'}`}>
             <div className="flex flex-col items-center gap-4 mb-6">
               <div className="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center">
                 <CheckCircle2 className="w-8 h-8 text-red-500" />
               </div>
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-white">Fechar Caixa</h2>
-                <p className="text-stone-400 mt-1">
+                <h2 className={`text-2xl font-bold ${textMain}`}>Fechar Caixa</h2>
+                <p className={`mt-1 ${textSub}`}>
                   Todos os pedidos entregues serão arquivados e o faturamento do dia será zerado.
                 </p>
                 <p className="text-amber-400 text-sm mt-2">
@@ -217,21 +241,17 @@ export default function CashierPage() {
                 value={closeDayPassword}
                 onChange={e => setCloseDayPassword(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleCloseDay()}
-                className="w-full bg-stone-800 text-white placeholder-stone-500 border border-stone-700 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500"
+                className={`w-full border rounded-lg px-4 py-3 focus:outline-none ${inputBg}`}
                 autoFocus
               />
               <div className="flex gap-3">
-                <Button
-                  onClick={() => { setShowCloseDay(false); setCloseDayPassword(''); }}
-                  className="flex-1 bg-stone-700 hover:bg-stone-600 text-white py-3"
-                >
+                <Button onClick={() => { setShowCloseDay(false); setCloseDayPassword(''); }}
+                  className={`flex-1 py-3 ${d ? 'bg-stone-700 hover:bg-stone-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-stone-700'}`}>
                   Cancelar
                 </Button>
-                <Button
-                  onClick={handleCloseDay}
+                <Button onClick={handleCloseDay}
                   className="flex-1 bg-red-700 hover:bg-red-600 text-white py-3"
-                  disabled={closingDay}
-                >
+                  disabled={closingDay}>
                   {closingDay ? 'Fechando...' : 'Confirmar'}
                 </Button>
               </div>
@@ -240,247 +260,232 @@ export default function CashierPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-green-600/20 rounded-full flex items-center justify-center">
-            <CreditCard className="w-6 h-6 text-green-500" />
-          </div>
-          <div>
-            <h1 className="text-4xl md:text-5xl text-white" data-testid="cashier-title">
-              CAIXA
-            </h1>
-            <p className="text-stone-500">{readyOrders.length} pedido(s) prontos para entrega</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setShowCloseDay(true)}
-            variant="outline"
-            className="btn-secondary flex items-center gap-2 text-red-400"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            Fechar Caixa
-          </Button>
-          <Button
-            onClick={fetchMonthlyReport}
-            variant="outline"
-            className="btn-secondary flex items-center gap-2 text-amber-400"
-            disabled={loadingReport}
-          >
-            <TrendingUp className="w-4 h-4" />
-            {loadingReport ? 'Carregando...' : 'Relatório do Mês'}
-          </Button>
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            className="btn-secondary flex items-center gap-2"
-            disabled={refreshing}
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Atualizando...' : 'Atualizar'}
-          </Button>
-        </div>
-      </div>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
 
-      {/* Stats Card */}
-      <div className="bg-stone-900 border border-stone-800 rounded-xl p-6 mb-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div>
-            <p className="text-stone-500 text-sm mb-1">Prontos</p>
-            <p className="text-3xl text-green-500 font-bold">{readyOrders.length}</p>
-          </div>
-          <div>
-            <p className="text-stone-500 text-sm mb-1">Entregues Hoje</p>
-            <p className="text-3xl text-stone-400 font-bold">{deliveredOrders.length}</p>
-          </div>
-          <div className="col-span-2">
-            <p className="text-stone-500 text-sm mb-1">Faturamento do Dia</p>
-            <p className="text-3xl text-amber-400 font-bold">{formatPrice(totalRevenue)}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Monthly Report */}
-      {showReport && monthlyReport && (
-        <div className="bg-stone-900 border border-amber-500/30 rounded-xl p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl text-amber-400 flex items-center gap-2">
-              <TrendingUp className="w-6 h-6" />
-              RELATÓRIO — {monthlyReport.month.toUpperCase()}
-            </h2>
-            <div className="flex gap-2">
-              <Button onClick={generatePDF} className="bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-2 py-2 px-4">
-                <FileText className="w-4 h-4" />
-                Gerar PDF
-              </Button>
-              <button onClick={() => setShowReport(false)} className="text-stone-500 hover:text-white text-xl px-2">✕</button>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${d ? 'bg-green-600/20' : 'bg-green-100'}`}>
+              <CreditCard className="w-6 h-6 text-green-500" />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-stone-800 rounded-xl p-4 flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-stone-400 text-sm">Faturamento do Mês</p>
-                <p className="text-2xl text-amber-400 font-bold">{formatPrice(monthlyReport.total_revenue)}</p>
-              </div>
-            </div>
-            <div className="bg-stone-800 rounded-xl p-4 flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-                <ShoppingBag className="w-6 h-6 text-green-400" />
-              </div>
-              <div>
-                <p className="text-stone-400 text-sm">Total de Pedidos</p>
-                <p className="text-2xl text-green-400 font-bold">{monthlyReport.total_orders}</p>
-              </div>
-            </div>
-            <div className="bg-stone-800 rounded-xl p-4 flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-blue-400" />
-              </div>
-              <div>
-                <p className="text-stone-400 text-sm">Ticket Médio</p>
-                <p className="text-2xl text-blue-400 font-bold">
-                  {monthlyReport.total_orders > 0
-                    ? formatPrice(monthlyReport.total_revenue / monthlyReport.total_orders)
-                    : formatPrice(0)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {monthlyReport.orders.length > 0 ? (
-            <div className="bg-stone-950/50 rounded-xl overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-stone-800 hover:bg-transparent">
-                    <TableHead className="text-stone-400">Data</TableHead>
-                    <TableHead className="text-stone-400">Mesa</TableHead>
-                    <TableHead className="text-stone-400">Cliente</TableHead>
-                    <TableHead className="text-stone-400">Itens</TableHead>
-                    <TableHead className="text-stone-400 text-right">Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {monthlyReport.orders.map(order => (
-                    <TableRow key={order.id} className="border-stone-800 hover:bg-stone-800/50">
-                      <TableCell className="text-stone-400">{formatDate(order.created_at)}</TableCell>
-                      <TableCell className="text-white font-bold">#{order.table_number}</TableCell>
-                      <TableCell className="text-stone-300">{order.customer_name}</TableCell>
-                      <TableCell className="text-stone-400 text-sm">{order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
-                      <TableCell className="text-amber-400 font-bold text-right">{formatPrice(order.total)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-stone-500">Nenhum pedido entregue este mês ainda.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="bg-stone-900 rounded-xl h-64 animate-pulse" />
-      ) : (
-        <div className="space-y-8">
-          {readyOrders.length > 0 && (
             <div>
-              <h2 className="text-2xl text-green-500 mb-4 flex items-center gap-2">
-                <CheckCircle2 className="w-6 h-6" />
-                PRONTOS PARA ENTREGA
+              <h1 className={`text-4xl md:text-5xl font-bold ${textMain}`} data-testid="cashier-title">
+                CAIXA
+              </h1>
+              <p className={textSub}>{readyOrders.length} pedido(s) prontos para entrega</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 flex-wrap justify-end">
+            {/* Toggle dark/light */}
+            <Button onClick={toggleDarkMode} variant="outline"
+              className={`flex items-center gap-2 border transition-colors ${d ? 'bg-stone-800 border-stone-700 text-yellow-400 hover:bg-stone-700' : 'bg-white border-gray-300 text-stone-600 hover:bg-gray-50'}`}
+              title={d ? 'Modo claro' : 'Modo escuro'}>
+              {d ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              <span className="hidden sm:inline text-sm">{d ? 'Claro' : 'Escuro'}</span>
+            </Button>
+            <Button onClick={() => setShowCloseDay(true)} variant="outline"
+              className="btn-secondary flex items-center gap-2 text-red-400">
+              <CheckCircle2 className="w-4 h-4" />
+              Fechar Caixa
+            </Button>
+            <Button onClick={fetchMonthlyReport} variant="outline"
+              className="btn-secondary flex items-center gap-2 text-amber-400"
+              disabled={loadingReport}>
+              <TrendingUp className="w-4 h-4" />
+              {loadingReport ? 'Carregando...' : 'Relatório do Mês'}
+            </Button>
+            <Button onClick={handleRefresh} variant="outline"
+              className={`flex items-center gap-2 border transition-colors ${d ? 'bg-stone-800 border-stone-700 text-stone-300 hover:bg-stone-700' : 'bg-white border-gray-300 text-stone-600 hover:bg-gray-50'}`}
+              disabled={refreshing}>
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{refreshing ? 'Atualizando...' : 'Atualizar'}</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Card */}
+        <div className={`border rounded-xl p-6 mb-8 ${cardBg}`}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+              <p className={`text-sm mb-1 ${textSub}`}>Prontos</p>
+              <p className="text-3xl text-green-500 font-bold">{readyOrders.length}</p>
+            </div>
+            <div>
+              <p className={`text-sm mb-1 ${textSub}`}>Entregues Hoje</p>
+              <p className={`text-3xl font-bold ${textFade}`}>{deliveredOrders.length}</p>
+            </div>
+            <div className="col-span-2">
+              <p className={`text-sm mb-1 ${textSub}`}>Faturamento do Dia</p>
+              <p className="text-3xl text-amber-400 font-bold">{formatPrice(totalRevenue)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Monthly Report */}
+        {showReport && monthlyReport && (
+          <div className={`border border-amber-500/30 rounded-xl p-6 mb-8 ${d ? 'bg-stone-900' : 'bg-white shadow-sm'}`}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl text-amber-400 flex items-center gap-2">
+                <TrendingUp className="w-6 h-6" />
+                RELATÓRIO — {monthlyReport.month.toUpperCase()}
               </h2>
-              <div className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
+              <div className="flex gap-2">
+                <Button onClick={generatePDF} className="bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-2 py-2 px-4">
+                  <FileText className="w-4 h-4" />
+                  Gerar PDF
+                </Button>
+                <button onClick={() => setShowReport(false)} className={`text-xl px-2 ${textSub} hover:${textMain}`}>✕</button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {[
+                { icon: DollarSign, color: 'amber', label: 'Faturamento do Mês', value: formatPrice(monthlyReport.total_revenue) },
+                { icon: ShoppingBag, color: 'green', label: 'Total de Pedidos', value: monthlyReport.total_orders },
+                { icon: TrendingUp, color: 'blue', label: 'Ticket Médio', value: monthlyReport.total_orders > 0 ? formatPrice(monthlyReport.total_revenue / monthlyReport.total_orders) : formatPrice(0) },
+              ].map(({ icon: Icon, color, label, value }) => (
+                <div key={label} className={`rounded-xl p-4 flex items-center gap-4 ${d ? 'bg-stone-800' : 'bg-gray-50 border border-gray-200'}`}>
+                  <div className={`w-12 h-12 bg-${color}-500/20 rounded-full flex items-center justify-center`}>
+                    <Icon className={`w-6 h-6 text-${color}-400`} />
+                  </div>
+                  <div>
+                    <p className={`text-sm ${textSub}`}>{label}</p>
+                    <p className={`text-2xl font-bold text-${color}-400`}>{value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {monthlyReport.orders.length > 0 ? (
+              <div className={`rounded-xl overflow-hidden ${d ? 'bg-stone-950/50' : 'bg-gray-50 border border-gray-200'}`}>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-stone-800 hover:bg-transparent">
-                      <TableHead className="text-stone-400">Mesa</TableHead>
-                      <TableHead className="text-stone-400">Cliente</TableHead>
-                      <TableHead className="text-stone-400">Itens</TableHead>
-                      <TableHead className="text-stone-400">Hora</TableHead>
-                      <TableHead className="text-stone-400 text-right">Total</TableHead>
-                      <TableHead className="text-stone-400 text-right">Ação</TableHead>
+                    <TableRow className={d ? 'border-stone-800 hover:bg-transparent' : 'border-gray-200 hover:bg-transparent'}>
+                      <TableHead className={headTxt}>Data</TableHead>
+                      <TableHead className={headTxt}>Mesa</TableHead>
+                      <TableHead className={headTxt}>Cliente</TableHead>
+                      <TableHead className={headTxt}>Itens</TableHead>
+                      <TableHead className={`${headTxt} text-right`}>Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {readyOrders.map(order => (
-                      <TableRow key={order.id} className="border-stone-800 hover:bg-stone-800/50">
-                        <TableCell className="font-bold text-white text-lg">#{order.table_number}</TableCell>
-                        <TableCell className="text-stone-300">{order.customer_name}</TableCell>
-                        <TableCell className="text-stone-400">{order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
-                        <TableCell className="text-stone-500">
-                          <Clock className="w-4 h-4 inline mr-1" />
-                          {formatTime(order.created_at)}
-                        </TableCell>
+                    {monthlyReport.orders.map(order => (
+                      <TableRow key={order.id} className={rowHover}>
+                        <TableCell className={textFade}>{formatDate(order.created_at)}</TableCell>
+                        <TableCell className={`font-bold ${textMain}`}>#{order.table_number}</TableCell>
+                        <TableCell className={textMid}>{order.customer_name}</TableCell>
+                        <TableCell className={`${textFade} text-sm`}>{order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
                         <TableCell className="text-amber-400 font-bold text-right">{formatPrice(order.total)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              onClick={() => printCashierOrder(order)}
-                              className="bg-stone-700 hover:bg-stone-600 text-white py-2 px-3"
-                              title="Imprimir comprovante"
-                            >
-                              <Printer className="w-4 h-4" />
-                            </Button>
-                            <Button onClick={() => handleMarkDelivered(order.id)} className="btn-primary py-2 px-4">
-                              Entregar
-                            </Button>
-                          </div>
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
-            </div>
-          )}
-
-          {deliveredOrders.length > 0 && (
-            <div>
-              <h2 className="text-2xl text-stone-500 mb-4 flex items-center gap-2">
-                <CheckCircle2 className="w-6 h-6" />
-                PEDIDOS ENTREGUES HOJE
-              </h2>
-              <div className="bg-stone-900 border border-stone-800 rounded-xl overflow-hidden opacity-75">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-stone-800 hover:bg-transparent">
-                      <TableHead className="text-stone-500">Mesa</TableHead>
-                      <TableHead className="text-stone-500">Cliente</TableHead>
-                      <TableHead className="text-stone-500">Itens</TableHead>
-                      <TableHead className="text-stone-500">Hora</TableHead>
-                      <TableHead className="text-stone-500 text-right">Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {deliveredOrders.slice(0, 10).map(order => (
-                      <TableRow key={order.id} className="border-stone-800 hover:bg-stone-800/50">
-                        <TableCell className="font-medium text-stone-400">#{order.table_number}</TableCell>
-                        <TableCell className="text-stone-500">{order.customer_name}</TableCell>
-                        <TableCell className="text-stone-600 text-sm">{order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
-                        <TableCell className="text-stone-600">{formatTime(order.created_at)}</TableCell>
-                        <TableCell className="text-stone-500 text-right">{formatPrice(order.total)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+            ) : (
+              <div className="text-center py-8">
+                <p className={textSub}>Nenhum pedido entregue este mês ainda.</p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
-          {orders.length === 0 && (
-            <div className="text-center py-20">
-              <CreditCard className="w-16 h-16 text-stone-600 mx-auto mb-4" />
-              <p className="text-stone-500 text-lg">Nenhum pedido no caixa ainda</p>
-            </div>
-          )}
-        </div>
-      )}
+        {/* Orders */}
+        {loading ? (
+          <div className={`rounded-xl h-64 animate-pulse ${d ? 'bg-stone-900' : 'bg-gray-200'}`} />
+        ) : (
+          <div className="space-y-8">
+            {readyOrders.length > 0 && (
+              <div>
+                <h2 className="text-2xl text-green-500 mb-4 flex items-center gap-2">
+                  <CheckCircle2 className="w-6 h-6" />
+                  PRONTOS PARA ENTREGA
+                </h2>
+                <div className={`border rounded-xl overflow-hidden ${cardBg}`}>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className={d ? 'border-stone-800 hover:bg-transparent' : 'border-gray-200 hover:bg-transparent'}>
+                        <TableHead className={headTxt}>Mesa</TableHead>
+                        <TableHead className={headTxt}>Cliente</TableHead>
+                        <TableHead className={headTxt}>Itens</TableHead>
+                        <TableHead className={headTxt}>Hora</TableHead>
+                        <TableHead className={`${headTxt} text-right`}>Total</TableHead>
+                        <TableHead className={`${headTxt} text-right`}>Ação</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {readyOrders.map(order => (
+                        <TableRow key={order.id} className={rowHover}>
+                          <TableCell className={`font-bold text-lg ${textMain}`}>#{order.table_number}</TableCell>
+                          <TableCell className={textMid}>{order.customer_name}</TableCell>
+                          <TableCell className={textFade}>{order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
+                          <TableCell className={textSub}>
+                            <Clock className="w-4 h-4 inline mr-1" />
+                            {formatTime(order.created_at)}
+                          </TableCell>
+                          <TableCell className="text-amber-400 font-bold text-right">{formatPrice(order.total)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-2 justify-end">
+                              <Button onClick={() => printCashierOrder(order)}
+                                className={`py-2 px-3 ${d ? 'bg-stone-700 hover:bg-stone-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-stone-700'}`}
+                                title="Imprimir comprovante">
+                                <Printer className="w-4 h-4" />
+                              </Button>
+                              <Button onClick={() => handleMarkDelivered(order.id)} className="btn-primary py-2 px-4">
+                                Entregar
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            {deliveredOrders.length > 0 && (
+              <div>
+                <h2 className={`text-2xl mb-4 flex items-center gap-2 ${textSub}`}>
+                  <CheckCircle2 className="w-6 h-6" />
+                  PEDIDOS ENTREGUES HOJE
+                </h2>
+                <div className={`border rounded-xl overflow-hidden opacity-75 ${cardBg}`}>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className={d ? 'border-stone-800 hover:bg-transparent' : 'border-gray-200 hover:bg-transparent'}>
+                        <TableHead className={headTxt}>Mesa</TableHead>
+                        <TableHead className={headTxt}>Cliente</TableHead>
+                        <TableHead className={headTxt}>Itens</TableHead>
+                        <TableHead className={headTxt}>Hora</TableHead>
+                        <TableHead className={`${headTxt} text-right`}>Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {deliveredOrders.slice(0, 10).map(order => (
+                        <TableRow key={order.id} className={rowHover}>
+                          <TableCell className={`font-medium ${textFade}`}>#{order.table_number}</TableCell>
+                          <TableCell className={textSub}>{order.customer_name}</TableCell>
+                          <TableCell className={`${textSub} text-sm`}>{order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</TableCell>
+                          <TableCell className={textSub}>{formatTime(order.created_at)}</TableCell>
+                          <TableCell className={`${textSub} text-right`}>{formatPrice(order.total)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            {orders.length === 0 && (
+              <div className="text-center py-20">
+                <CreditCard className={`w-16 h-16 mx-auto mb-4 ${d ? 'text-stone-600' : 'text-gray-400'}`} />
+                <p className={`text-lg ${textSub}`}>Nenhum pedido no caixa ainda</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
